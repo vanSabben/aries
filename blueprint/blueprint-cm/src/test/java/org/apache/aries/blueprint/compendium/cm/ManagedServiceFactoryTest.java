@@ -38,6 +38,40 @@ public class ManagedServiceFactoryTest extends BaseTest {
     }
 
     @Test
+    public void test1B() throws Exception {
+        ConfigurationAdmin ca = getOsgiService(ConfigurationAdmin.class);
+        Configuration cf1 = ca.createFactoryConfiguration("blueprint-sample-managed-service-factory", null);
+        Hashtable<String,String> props1 = new Hashtable<String,String>();
+        props1.put("a", "5");
+        cf1.update(props1);
+
+        Configuration cf2 = ca.createFactoryConfiguration("blueprint-sample-managed-service-factory", null);
+        Hashtable<String,String> props2 = new Hashtable<String,String>();
+        props2.put("a", "7");
+        cf2.update(props2);
+
+        BundleContext context = getBundleContext();
+        ServiceReference sr1 = Helper.getOsgiServiceReference(context, Foo.class, "(&(key=foo1)(a=5))", Helper.DEFAULT_TIMEOUT);
+        assertNotNull(sr1);
+
+        ServiceReference sr2 = Helper.getOsgiServiceReference(context, Foo.class, "(&(key=foo1)(a=7))", Helper.DEFAULT_TIMEOUT);
+        assertNotNull(sr2);
+
+        assertEquals("5", sr1.getProperty("a"));
+        assertNull(sr1.getProperty("b"));
+
+        props1 = new Hashtable<String,String>();
+        props1.put("a", "6");
+        cf1.update(props1);
+
+        // Update after creation
+        Thread.sleep(500);
+
+        // Update of service properties
+        assertEquals("6", sr1.getProperty("a")); // but is 7
+    }
+    
+    @Test
     public void test1() throws Exception {
         ConfigurationAdmin ca = getOsgiService(ConfigurationAdmin.class);
         Configuration cf = ca.createFactoryConfiguration("blueprint-sample-managed-service-factory", null);
